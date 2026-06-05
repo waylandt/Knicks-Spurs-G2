@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NBA Picks — Knicks vs Spurs, Game 2</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --knicks-blue: #006BB6;
+    --knicks-orange: #F58426;
+    --spurs-black: #1D1D1D;
+    --spurs-silver: #C0C0C0;
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #252525;
+    --border: #333;
+    --text: #f0f0f0;
+    --muted: #888;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    text-align: center;
+  }
+  header h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+  header p { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+  .name-bar {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .name-bar label { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+  .name-bar input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    max-width: 220px;
+  }
+  .name-bar input:focus { outline: none; border-color: #555; }
+  .readonly-badge {
+    display: none;
+    background: #2a2a2a;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .tabs {
+    display: flex;
+    border-bottom: 2px solid var(--border);
+    background: var(--surface);
+  }
+  .tab {
+    flex: 1;
+    padding: 12px 8px;
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    color: var(--muted);
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.15s, border-color 0.15s;
+    user-select: none;
+  }
+  .tab.active-knicks { color: var(--knicks-orange); border-bottom-color: var(--knicks-orange); }
+  .tab.active-spurs  { color: var(--spurs-silver);  border-bottom-color: var(--spurs-silver); }
+  .tab.active-final  { color: #7c3aed;               border-bottom-color: #7c3aed; }
+
+  .panel { display: none; padding: 16px 20px 100px; }
+  .panel.active { display: block; }
+
+  .team-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .team-logo {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 900;
+  }
+  .logo-knicks { background: var(--knicks-blue); color: var(--knicks-orange); }
+  .logo-spurs  { background: var(--spurs-black); color: var(--spurs-silver); border: 1px solid #444; }
+  .team-name { font-size: 1.1rem; font-weight: 700; }
+  .team-total {
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: right;
+  }
+  .team-total span { display: block; font-size: 1.4rem; font-weight: 700; color: var(--text); }
+
+  .col-headers {
+    display: grid;
+    grid-template-columns: 1fr 64px;
+    gap: 4px;
+    padding: 0 0 6px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .col-headers span:not(:first-child) { text-align: center; }
+
+  .player-row {
+    display: grid;
+    grid-template-columns: 1fr 64px;
+    gap: 4px;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid #1e1e1e;
+  }
+  .player-name {
+    font-size: 0.82rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 4px;
+  }
+  .player-num {
+    font-size: 0.65rem;
+    color: var(--muted);
+  }
+  .stat-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    text-align: center;
+    padding: 6px 2px;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  .stat-input:focus { outline: none; border-color: #555; }
+  .stat-input::-webkit-inner-spin-button,
+  .stat-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .stat-input[readonly] {
+    background: transparent;
+    border-color: transparent;
+    cursor: default;
+  }
+
+  /* Final tab */
+  .final-panel { max-width: 420px; margin: 0 auto; }
+  .scoreboard {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .scoreboard-title {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  .score-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+  .score-team { text-align: center; }
+  .score-team-name { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .score-num { font-size: 3rem; font-weight: 900; line-height: 1; margin-top: 6px; }
+  .score-knicks { color: var(--knicks-orange); }
+  .score-spurs  { color: var(--spurs-silver); }
+  .score-dash { font-size: 1.5rem; color: var(--muted); }
+  .winner-label {
+    margin-top: 16px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .winner-label.knicks { color: var(--knicks-orange); }
+  .winner-label.spurs  { color: var(--spurs-silver); }
+
+  .top-scorers {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .top-scorers-header {
+    padding: 12px 16px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .top-scorer-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid #1e1e1e;
+    gap: 10px;
+  }
+  .top-scorer-row:last-child { border-bottom: none; }
+  .rank { font-size: 0.7rem; color: var(--muted); width: 16px; text-align: center; }
+  .ts-name { flex: 1; font-size: 0.85rem; font-weight: 600; }
+  .ts-pts { font-size: 1rem; font-weight: 800; }
+  .ts-extras { font-size: 0.7rem; color: var(--muted); margin-left: 8px; }
+  .ts-pts.knicks { color: var(--knicks-orange); }
+  .ts-pts.spurs  { color: var(--spurs-silver); }
+
+  /* Bottom action bar */
+  .action-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    gap: 10px;
+  }
+  .btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    transition: opacity 0.15s;
+  }
+  .btn:active { opacity: 0.7; }
+  .btn-share {
+    background: #7c3aed;
+    color: #fff;
+  }
+  .btn-own {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-card {
+    background: #166534;
+    color: #fff;
+  }
+
+  /* Share modal */
+  .modal-bg {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    width: 100%;
+    max-width: 400px;
+  }
+  .modal h2 { font-size: 1rem; margin-bottom: 8px; }
+  .modal p { font-size: 0.8rem; color: var(--muted); margin-bottom: 16px; }
+  .link-box {
+    background: #111;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.7rem;
+    color: var(--muted);
+    word-break: break-all;
+    margin-bottom: 14px;
+    font-family: monospace;
+  }
+  .modal-btns { display: flex; gap: 8px; }
+  .btn-copy { background: #7c3aed; color: #fff; }
+  .btn-close-modal { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+
+  /* Summary card overlay */
+  .card-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    flex-direction: column;
+  }
+  .card-overlay.open { display: flex; }
+  .card-overlay p { font-size: 0.75rem; color: var(--muted); margin-top: 12px; }
+  .card-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: #333;
+    border: none;
+    color: #fff;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+
+  #summary-card {
+    background: #0f0f0f;
+    border: 1px solid #333;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 380px;
+    overflow: hidden;
+  }
+  .card-top {
+    background: linear-gradient(135deg, #002468 0%, #1a1a2e 50%, #1d1d1d 100%);
+    padding: 18px 20px 14px;
+    text-align: center;
+  }
+  .card-game-label { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.5); }
+  .card-game-title { font-size: 1rem; font-weight: 800; margin-top: 4px; }
+  .card-picker { font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-top: 4px; }
+  .card-score-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    border-bottom: 1px solid #222;
+  }
+  .card-score-team { text-align: center; }
+  .card-score-name { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+  .card-score-num { font-size: 2.8rem; font-weight: 900; line-height: 1; }
+  .card-score-dash { font-size: 1.2rem; color: #555; }
+  .card-winner-tag {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 20px;
+    padding: 2px 8px;
+    margin-top: 4px;
+    display: inline-block;
+  }
+  .card-team-block { padding: 14px 20px; border-bottom: 1px solid #1a1a1a; }
+  .card-team-block:last-child { border-bottom: none; }
+  .card-team-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .card-player-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 7px;
+  }
+  .card-player-row:last-child { margin-bottom: 0; }
+  .card-rank-badge {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem; font-weight: 800;
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+  .card-player-name { flex: 1; font-size: 0.82rem; font-weight: 600; }
+  .card-player-pts { font-size: 1rem; font-weight: 800; width: 36px; text-align: right; flex-shrink: 0; }
+  .card-footer {
+    background: #111;
+    padding: 10px 20px;
+    font-size: 0.6rem;
+    color: #444;
+    text-align: center;
+    letter-spacing: 0.06em;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #166534;
+    color: #fff;
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏀 Knicks vs Spurs — 2026 NBA Finals, Game 2</h1>
+  <p id="header-sub">Fill in your stat predictions before tip-off</p>
+</header>
+
+<div class="name-bar" id="name-bar">
+  <label for="picker-name">Your name:</label>
+  <input type="text" id="picker-name" placeholder="Enter your name" maxlength="24" />
+  <span class="readonly-badge" id="readonly-badge">Viewing picks</span>
+</div>
+
+<div class="tabs">
+  <div class="tab active-knicks" id="tab-knicks" onclick="switchTab('knicks')">🗽 Knicks</div>
+  <div class="tab" id="tab-spurs"  onclick="switchTab('spurs')">🤠 Spurs</div>
+  <div class="tab" id="tab-final" onclick="switchTab('final')">🏆 Final</div>
+</div>
+
+<div class="panel active" id="panel-knicks">
+  <div class="team-header">
+    <div class="team-logo logo-knicks">NY</div>
+    <div class="team-name">New York Knicks</div>
+    <div class="team-total">Predicted pts<span id="knicks-total">0</span></div>
+  </div>
+  <div class="col-headers">
+    <span>Player</span><span>PTS</span>
+  </div>
+  <div id="knicks-rows"></div>
+</div>
+
+<div class="panel" id="panel-spurs">
+  <div class="team-header">
+    <div class="team-logo logo-spurs">SA</div>
+    <div class="team-name">San Antonio Spurs</div>
+    <div class="team-total">Predicted pts<span id="spurs-total">0</span></div>
+  </div>
+  <div class="col-headers">
+    <span>Player</span><span>PTS</span>
+  </div>
+  <div id="spurs-rows"></div>
+</div>
+
+<div class="panel" id="panel-final">
+  <div class="final-panel">
+    <div class="scoreboard">
+      <div class="scoreboard-title">Predicted Final Score</div>
+      <div class="score-row">
+        <div class="score-team">
+          <div class="score-team-name" style="color:var(--knicks-orange)">Knicks</div>
+          <div class="score-num score-knicks" id="final-knicks-score">0</div>
+        </div>
+        <div class="score-dash">—</div>
+        <div class="score-team">
+          <div class="score-team-name" style="color:var(--spurs-silver)">Spurs</div>
+          <div class="score-num score-spurs" id="final-spurs-score">0</div>
+        </div>
+      </div>
+      <div class="winner-label" id="final-winner-label">—</div>
+    </div>
+
+    <div class="top-scorers" id="final-top-scorers"></div>
+  </div>
+</div>
+
+<!-- Action Bar -->
+<div class="action-bar" id="action-bar">
+  <button class="btn btn-share" onclick="openShareModal()">Share Link</button>
+  <button class="btn btn-card" onclick="openCard()">Summary Card</button>
+</div>
+
+<!-- Readonly action bar (viewing someone else's picks) -->
+<div class="action-bar" id="action-bar-readonly" style="display:none">
+  <button class="btn btn-own" onclick="makeOwnPicks()">Make My Own Picks</button>
+  <button class="btn btn-card" onclick="openCard()">Their Summary Card</button>
+</div>
+
+<!-- Share Modal -->
+<div class="modal-bg" id="share-modal">
+  <div class="modal">
+    <h2>Share Your Picks 🔗</h2>
+    <p>Send this link to friends so they can see your predictions and make their own.</p>
+    <div class="link-box" id="share-link-text"></div>
+    <div class="modal-btns">
+      <button class="btn btn-copy" onclick="copyLink()">Copy Link</button>
+      <button class="btn btn-close-modal" onclick="closeShareModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Card Overlay -->
+<div class="card-overlay" id="card-overlay">
+  <button class="card-close" onclick="closeCard()">✕</button>
+  <div id="summary-card"></div>
+  <p>Screenshot this card to share with friends 📸</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const KNICKS = [
+  "Jalen Brunson","Miles McBride","Jordan Clarkson","Landry Shamet","Josh Hart",
+  "Mikal Bridges","OG Anunoby","Pacôme Dadiet","Jeremy Sochan","Mohamed Diawara",
+  "Karl-Anthony Towns","Mitchell Robinson","Ariel Hukporti"
+];
+const SPURS = [
+  "De'Aaron Fox","Stephon Castle","Dylan Harper","Devin Vassell","Jordan McLaughlin",
+  "Lindy Waters III","Victor Wembanyama","Keldon Johnson","Harrison Barnes",
+  "Julian Champagnie","Carter Bryant","Kelly Olynyk","Mason Plumlee",
+  "Luke Kornet","Bismack Biyombo"
+];
+
+const STATS = ['pts'];
+
+let state = {
+  user: '',
+  knicks: KNICKS.map(n => ({ name: n, pts:0 })),
+  spurs:  SPURS.map(n  => ({ name: n, pts:0 })),
+};
+let readOnly = false;
+
+function buildRows(teamKey) {
+  const container = document.getElementById(`${teamKey}-rows`);
+  container.innerHTML = '';
+  state[teamKey].forEach((player, i) => {
+    const row = document.createElement('div');
+    row.className = 'player-row';
+    row.innerHTML = `<div class="player-name">${player.name}</div>` +
+      STATS.map(stat => `
+        <input class="stat-input" type="number" min="0" max="99"
+          data-team="${teamKey}" data-idx="${i}" data-stat="${stat}"
+          value="${player[stat] || ''}" placeholder="0"
+          ${readOnly ? 'readonly' : ''} />`).join('');
+    container.appendChild(row);
+  });
+  container.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', onStatChange);
+  });
+}
+
+function onStatChange(e) {
+  const { team, idx, stat } = e.target.dataset;
+  const val = parseInt(e.target.value) || 0;
+  state[team][parseInt(idx)][stat] = val;
+  updateTotals();
+  updateFinalPanel();
+}
+
+function updateTotals() {
+  ['knicks','spurs'].forEach(team => {
+    const total = state[team].reduce((s, p) => s + (p.pts || 0), 0);
+    document.getElementById(`${team}-total`).textContent = total;
+  });
+}
+
+function getTopScorers(team, n=3) {
+  return [...state[team]]
+    .sort((a,b) => (b.pts||0) - (a.pts||0))
+    .slice(0, n);
+}
+
+function updateFinalPanel() {
+  const kPts = state.knicks.reduce((s,p) => s+(p.pts||0), 0);
+  const sPts = state.spurs.reduce((s,p)  => s+(p.pts||0), 0);
+  document.getElementById('final-knicks-score').textContent = kPts;
+  document.getElementById('final-spurs-score').textContent  = sPts;
+  const wl = document.getElementById('final-winner-label');
+  if (kPts === sPts && kPts === 0) { wl.textContent = '—'; wl.className = 'winner-label'; }
+  else if (kPts >= sPts) { wl.textContent = '🗽 Knicks Win'; wl.className = 'winner-label knicks'; }
+  else { wl.textContent = '🤠 Spurs Win'; wl.className = 'winner-label spurs'; }
+
+  const container = document.getElementById('final-top-scorers');
+  container.innerHTML = `
+    <div class="top-scorers-header">Top Scorers</div>
+    ${buildTopScorersHTML('knicks', '#F58426')}
+    ${buildTopScorersHTML('spurs', '#C0C0C0')}
+  `;
+}
+
+function buildTopScorersHTML(team, color) {
+  const top = getTopScorers(team);
+  const label = team === 'knicks' ? 'Knicks' : 'Spurs';
+  return `
+    <div style="padding:10px 16px 4px;font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${color}">${label}</div>
+    ${top.map((p,i) => `
+      <div class="top-scorer-row">
+        <span class="rank">${i+1}</span>
+        <span class="ts-name">${p.name}</span>
+        <span class="ts-pts ${team}" style="color:${color}">${p.pts||0}</span>
+      </div>`).join('')}`;
+}
+
+// Tab switching
+function switchTab(tab) {
+  ['knicks','spurs','final'].forEach(t => {
+    document.getElementById(`panel-${t}`).classList.remove('active');
+    document.getElementById(`tab-${t}`).classList.remove('active-knicks','active-spurs','active-final');
+  });
+  document.getElementById(`panel-${tab}`).classList.add('active');
+  document.getElementById(`tab-${tab}`).classList.add(`active-${tab}`);
+  if (tab === 'final') updateFinalPanel();
+}
+
+// Encode/decode state
+function encodeState() {
+  const payload = {
+    u: state.user,
+    k: state.knicks.map(p => p.pts),
+    s: state.spurs.map(p  => p.pts),
+  };
+  return btoa(encodeURIComponent(JSON.stringify(payload)));
+}
+
+function decodeState(hash) {
+  try {
+    const payload = JSON.parse(decodeURIComponent(atob(hash)));
+    state.user = payload.u || '';
+    state.knicks = KNICKS.map((name, i) => ({ name, pts: payload.k[i] || 0 }));
+    state.spurs  = SPURS.map((name, i)  => ({ name, pts: payload.s[i] || 0 }));
+    return true;
+  } catch { return false; }
+}
+
+// Share modal
+function openShareModal() {
+  const name = document.getElementById('picker-name').value.trim();
+  if (!name) { showToast('Enter your name first!'); return; }
+  state.user = name;
+  const url = location.origin + location.pathname + '#picks=' + encodeState();
+  document.getElementById('share-link-text').textContent = url;
+  document.getElementById('share-modal').classList.add('open');
+}
+function closeShareModal() {
+  document.getElementById('share-modal').classList.remove('open');
+}
+function copyLink() {
+  const text = document.getElementById('share-link-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('Link copied! 🔗');
+    closeShareModal();
+  });
+}
+
+// Summary card
+function openCard() {
+  const kPts = state.knicks.reduce((s,p) => s+(p.pts||0), 0);
+  const sPts = state.spurs.reduce((s,p)  => s+(p.pts||0), 0);
+  const winner = kPts >= sPts ? 'Knicks' : 'Spurs';
+  const winnerColor = kPts >= sPts ? '#F58426' : '#C0C0C0';
+
+  const kTop = getTopScorers('knicks');
+  const sTop = getTopScorers('spurs');
+
+  function playerRows(players, color, rankBg) {
+    return players.map((p, i) => `
+      <div class="card-player-row">
+        <div class="card-rank-badge" style="background:${rankBg};color:#fff">${i+1}</div>
+        <div class="card-player-name">${p.name}</div>
+        <div class="card-player-pts" style="color:${color}">${p.pts||0}</div>
+      </div>`).join('');
+  }
+
+  const pickerName = state.user || document.getElementById('picker-name').value.trim() || 'Anonymous';
+
+  document.getElementById('summary-card').innerHTML = `
+    <div class="card-top">
+      <div class="card-game-label">2026 NBA Finals · Game 2</div>
+      <div class="card-game-title">Knicks vs Spurs</div>
+      <div class="card-picker">Picks by ${pickerName}</div>
+    </div>
+    <div class="card-score-row">
+      <div class="card-score-team">
+        <div class="card-score-name" style="color:#F58426">Knicks</div>
+        <div class="card-score-num" style="color:#F58426">${kPts}</div>
+        ${kPts >= sPts ? `<div class="card-winner-tag" style="background:#F58426;color:#000">WINNER</div>` : ''}
+      </div>
+      <div class="card-score-dash">—</div>
+      <div class="card-score-team">
+        <div class="card-score-name" style="color:#C0C0C0">Spurs</div>
+        <div class="card-score-num" style="color:#C0C0C0">${sPts}</div>
+        ${sPts > kPts ? `<div class="card-winner-tag" style="background:#C0C0C0;color:#000">WINNER</div>` : ''}
+      </div>
+    </div>
+    <div class="card-team-block">
+      <div class="card-team-label" style="color:#F58426">🗽 Knicks — Top Scorers</div>
+      ${playerRows(kTop, '#F58426', '#003f87')}
+    </div>
+    <div class="card-team-block">
+      <div class="card-team-label" style="color:#C0C0C0">🤠 Spurs — Top Scorers</div>
+      ${playerRows(sTop, '#C0C0C0', '#2a2a2a')}
+    </div>
+    <div class="card-footer">NBA PICKS · GAME 2 · JUN 5 2026</div>
+  `;
+  document.getElementById('card-overlay').classList.add('open');
+}
+function closeCard() {
+  document.getElementById('card-overlay').classList.remove('open');
+}
+
+// Make own picks from a readonly view
+function makeOwnPicks() {
+  readOnly = false;
+  state.knicks = KNICKS.map(n => ({ name: n, pts:0 }));
+  state.spurs  = SPURS.map(n  => ({ name: n, pts:0 }));
+  history.replaceState(null, '', location.pathname);
+  document.getElementById('picker-name').value = '';
+  document.getElementById('picker-name').removeAttribute('readonly');
+  document.getElementById('action-bar').style.display = 'flex';
+  document.getElementById('action-bar-readonly').style.display = 'none';
+  document.getElementById('header-sub').textContent = 'Fill in your stat predictions before tip-off';
+  buildRows('knicks');
+  buildRows('spurs');
+  updateTotals();
+  updateFinalPanel();
+  switchTab('knicks');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// Init
+function init() {
+  const hash = location.hash;
+  if (hash.startsWith('#picks=')) {
+    const encoded = hash.slice(7);
+    if (decodeState(encoded)) {
+      readOnly = true;
+      const nameEl = document.getElementById('picker-name');
+      nameEl.value = state.user;
+      nameEl.setAttribute('readonly', true);
+      document.getElementById('header-sub').textContent = `Viewing ${state.user}'s picks`;
+      document.getElementById('action-bar').style.display = 'none';
+      document.getElementById('action-bar-readonly').style.display = 'flex';
+    }
+  }
+  buildRows('knicks');
+  buildRows('spurs');
+  updateTotals();
+  updateFinalPanel();
+}
+
+init();
+</script>
+</body>
+</html>
